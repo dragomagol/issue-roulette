@@ -1,20 +1,27 @@
 import random
 import requests
+import threading
 import webbrowser
 from bs4 import BeautifulSoup
 
-def main():
-    page = requests.get("https://github.com/tgstation/tgstation/issues")
-    soup = BeautifulSoup(page.content, 'html.parser')
-    total_issues = soup.find('div', {"aria-label": "Issues"}).find('div').find('div')
-    total_issues = total_issues['id'].split("_")[1]
+class myThread (threading.Thread):
+    def __init__(self, max_issues):
+        threading.Thread.__init__(self)
+        self.max_issues = max_issues
 
-    random_issue = random.randint(1, int(total_issues))
+    def run(self):
+        find_valid_issue(self.max_issues)
 
-    while(not is_valid_issue(random_issue)):
-        random_issue = random.randint(1, int(total_issues))
+def find_valid_issue(max_issues):
+    random_issue = random.randint(1, int(max_issues))
+    global issue_found
+    while not is_valid_issue(random_issue) and not issue_found:
+        random_issue = random.randint(1, int(max_issues))
 
-    webbrowser.open("https://github.com/tgstation/tgstation/issues/" + str(random_issue))  # Go to the issue!
+    if not issue_found:
+        issue_found = True
+        webbrowser.open("https://github.com/tgstation/tgstation/issues/" + str(random_issue))  # Go to the issue!
+
 
 def is_valid_issue(issue_number: int):
     url = "https://github.com/tgstation/tgstation/issues/" + str(issue_number)
@@ -31,4 +38,21 @@ def is_valid_issue(issue_number: int):
     open_label = soup.find('span', attrs = {"title": "Status: Open"})
     return open_label is not None
 
-main()
+## --------------------------- THREADING
+issue_found = False
+num_threads = 4
+threads = []
+
+## --------------------------- MAIN
+page = requests.get("https://github.com/tgstation/tgstation/issues")
+soup = BeautifulSoup(page.content, 'html.parser')
+total_issues = soup.find('div', {"aria-label": "Issues"}).find('div').find('div')
+total_issues = total_issues['id'].split("_")[1]
+
+for i in range(0, num_threads):
+    thread = myThread(total_issues)
+    threads.append(thread)
+    thread.start()
+
+for thread in threads:
+    thread.join()
