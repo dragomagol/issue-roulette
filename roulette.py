@@ -35,7 +35,7 @@ def is_valid_issue(issue_number: int):
     if(pr_reference is not None):
         return False
 
-    open_label = soup.find('span', attrs = {"title": "Status: Open"})
+    open_label = soup.find('span', attrs = {"class": "State State--open"})
     return open_label is not None
 
 ## --------------------------- THREADING
